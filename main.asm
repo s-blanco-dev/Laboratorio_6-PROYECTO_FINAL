@@ -324,7 +324,310 @@ copia_char3:
 	brne	copia_char1
 	ret
 
-;imagen ejemplo con cuadrados de colores para pruebas
+char_0:
+.db 0b00000000, 0b00000000
+.db 0b00000000, 0b00000000
+.db 0b00000000, 0b00000000
+.db 0b00011000, 0b00111100
+.db 0b00111100, 0b00000000
+
+_tmr1_int:
+	push	r16							;guardo contexto: registros y banderas
+	in		r16,	SREG
+	push	XH
+	push	XL
+		
+	dec		r24
+	andi	r24,	0b00000111
+		
+	ldi		XL,	low(screen)			;apunto de nuevo Y al primer byte de la pantalla
+	ldi		XH,	high(screen)	
+
+	st		X,		r24					;guardo el byte nuevo o el que estaba antes en la memoria de pantalla
+	
+	pop		XL
+	pop		XH
+	pop		r16
+	out		SREG,	r16
+	reti
+
+
+gestorColision:
+	cpi Nivel, 1
+	breq colisionUno
+	cpi Nivel, 3
+	breq colisionTres
+
+colisionUno:
+	call colisionNivelUno
+	ret
+colisionDos:
+	call colisionNivelTres
+	ret
+;------------------------------------------------------------------------------------------------------------------------
+;Movimientos
+
+;Movimiento Derecha
+der:
+	push r16
+	push r17
+	call rutina
+	inc pos_x 
+	mov r17, pos_x
+	mov r16, pos_y
+	cpi pos_x, 24
+	brge topper
+    call copia_char
+	call gestorColision
+	jmp fin
+
+izq:
+	push r16
+	push r17
+	call rutina
+	dec pos_x 
+	mov r17, pos_x
+	mov r16, pos_y
+	cpi pos_x, 3
+	brlo topp
+    call copia_char
+	call colisionNivelUno
+	jmp fin
+
+subir:
+	push r16
+	push r17
+	call rutina
+	dec pos_y 
+	mov r17, pos_x
+	mov r16, pos_y
+    call copia_char
+	cpi pos_y, 0
+	breq previa
+
+	jmp fin
+	
+
+	topper:
+	ldi r17, 1
+	mov pos_x, r17
+	mov r16, pos_y
+	call copia_char	
+	
+	topp:
+	ldi r17, 24
+	mov pos_x, r17
+	mov r16, pos_y
+	call copia_char	
+
+    ; Restaura los registros guardados
+	fin:
+	pop r17
+	pop r16
+    ret                    ; Retorna de la rutina 'mover'
+
+rutina:
+	cpi nivel, 1
+	breq nivelOne
+	cpi nivel, 2
+	breq nivelTwo
+	cpi nivel, 3
+	breq nivelThree
+	cpi nivel, 4
+	breq finish
+	cpi nivel, 5
+	breq loser
+	ret
+
+aumento:
+	inc nivel
+	ldi pos_y, 22
+	ldi pos_x, 12
+
+	mov r17, pos_x
+	mov r16, pos_y
+
+    call copia_char        ; Copia el carácter actual en la nueva posición
+	jmp fin
+	ret
+
+loserprev:
+	ldi nivel, 5
+	ldi pos_y, 22
+	ldi pos_x, 12
+
+	mov r17, pos_x
+	mov r16, pos_y
+
+    call copia_char
+	jmp fin
+	ret
+
+	previa:
+	cpi pos_x, 9
+	breq aumento
+	cpi pos_x, 10
+	breq aumento
+	cpi pos_x, 11
+	breq aumento
+	cpi pos_x, 12
+	breq aumento
+	cpi pos_x, 13
+	breq aumento
+	cpi pos_x, 14
+	breq aumento
+	cpi pos_x, 15
+	breq aumento
+	cpi pos_x, 16
+	breq aumento
+	jmp loserprev
+	ret
+
+;------------------------------------------------------------------------------------------
+nivelOne:
+;copia una imagen de fondo en el panel
+	ldi		ZL,	low(Menu<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
+	ldi		ZH,	high(Menu<<1)
+	call	copia_img	
+	ret
+
+nivelTwo:
+;copia una imagen de fondo en el panel
+	ldi		ZL,	low(nivelDos<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
+	ldi		ZH,	high(nivelDos<<1)
+	call	copia_img
+	ret
+
+nivelThree:
+	ldi		ZL,	low(nivelTres<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
+	ldi		ZH,	high(nivelTres<<1)
+	call	copia_img
+	ret
+
+finish:
+	ldi		ZL,	low(caffer<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
+	ldi		ZH,	high(caffer<<1)
+	call	copia_img
+	rjmp finish
+
+loser:
+	ldi		ZL,	low(lose<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
+	ldi		ZH,	high(lose<<1)
+	call	copia_img
+	rjmp loser
+
+;-----------------------------------------------------------------------------------------------------------------------
+
+colisionNivelUnoY:
+    cpi pos_y, 22         ; Comparar pos_y con 21
+    brsh loser            ; Si pos_y >= 21, ir a loser
+	ret
+colisionNivelB:
+    cpi pos_y, 16         ; Comparar pos_y con 19
+    brsh loser            ; Si pos_y < 19, ir a loser
+	ret
+colisionNivelC:
+    cpi pos_y, 9         ; Comparar pos_y con 12
+    brsh loser            ; Si pos_y < 12, ir a loser
+	ret
+colisionNivelD:
+    cpi pos_y, 7         ; Comparar pos_y con 10
+    brsh loser            ; Si pos_y < 10, ir a loser
+	ret
+colisionNivelE:
+    cpi pos_y, 6         ; Comparar pos_y con 11
+    brsh loser            ; Si pos_y < 11, ir a loser
+    ret                   ; Si no hay colisión, regresar
+
+colisionNivelUno:
+    cpi pos_x, 9          ; Comparar pos_x con 9
+    breq colisionNivelUnoY ; Si pos_x == 9, ir a la siguiente comprobación
+    cpi pos_x, 6          ; Comparar pos_x con 6
+    breq colisionNivelB ; Si pos_x == 6, ir a la siguiente comprobación
+    cpi pos_x, 5          ; Comparar pos_x con 5
+    breq colisionNivelC ; Si pos_x == 5, ir a la siguiente comprobación
+    cpi pos_x, 4          ; Comparar pos_x con 4
+    breq colisionNivelD ; Si pos_x == 4, ir a la siguiente comprobación
+    cpi pos_x, 3          ; Comparar pos_x con 3
+    breq colisionNivelE ; Si pos_x == 3, ir a la siguiente comprobación
+
+	cpi pos_x, 14	      ; Comparar pos_x con 9
+    breq colisionNivelUnoY ; Si pos_x == 9, ir a la siguiente comprobación
+    cpi pos_x, 18          ; Comparar pos_x con 6
+    breq colisionNivelB ; Si pos_x == 6, ir a la siguiente comprobación
+    cpi pos_x, 19          ; Comparar pos_x con 5
+    breq colisionNivelC ; Si pos_x == 5, ir a la siguiente comprobación
+    cpi pos_x, 20          ; Comparar pos_x con 4
+    breq colisionNivelD ; Si pos_x == 4, ir a la siguiente comprobación
+    cpi pos_x, 21          ; Comparar pos_x con 3
+    breq colisionNivelE ; Si pos_x == 3, ir a la siguiente comprobación
+
+    ret                   ; Si no cumple ninguna condición, regresar
+
+colisionNivelTres:
+	cpi pos_x, 11          ; Comparar pos_x con 9
+    breq colisionNivelTresE ; Si pos_x == 9, ir a la siguiente comprobación
+	cpi pos_x, 3
+	breq colisionNivelTresF
+	cpi pos_x, 30
+	breq colisionNivelTresF
+	cpi pos_y, 26
+	breq colisionNivelTresR
+	cpi pos_y, 23
+	breq colisionNivelTresR
+	cpi pos_y, 19
+	breq colisionNivelTresG
+	cpi pos_y, 18
+	breq colisionNivelTresG
+	cpi pos_y, 14
+	breq colisionNivelTresL
+	cpi pos_y, 11
+	breq colisionNivelTresL
+	ret
+
+colisionNivelTresE:
+    cpi pos_y, 25         ; Comparar pos_y con 11
+    brsh loser            ; Si pos_y < 11, ir a loser
+    ret    
+colisionNivelTresF:
+    cpi pos_y, 0         ; Comparar pos_y con 11
+    brsh loser            ; Si pos_y < 11, ir a loser
+    ret
+colisionNivelTresR:
+    cpi pos_x, 23         ; Comparar pos_y con 11
+    brSH loser            ; Si pos_y < 11, ir a loser
+    ret
+colisionNivelTresG:
+    cpi pos_x, 10         ; Comparar pos_y con 11
+    brlo loser            ; Si pos_y < 11, ir a loser
+    ret
+colisionNivelTresL:
+    cpi pos_x, 24         ; Comparar pos_y con 11
+    brlo loser            ; Si pos_y < 11, ir a loser
+    ret
+
+
+;------------------------------------------------------------------------------------------------------
+delay:
+	push r18
+	push r19
+	push r20
+    ldi  r18, 10
+    ldi  r19, 10
+    ldi  r20, 110
+L1: dec  r20
+    brne L1
+    dec  r19
+    brne L1
+    dec  r18
+    brne L1
+	pop r20
+	pop r19
+	pop r18
+	ret
+
+;------------------------------------------------------------------------------------------------------------------
+
 Caffer:	
 .db 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07
 .db 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07
@@ -428,289 +731,6 @@ nivelDos:
 .db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 
 
-
-
-;Mapa de caracteres, por ahora solo '0' y '1'
-char_0:
-.db 0b00000000, 0b00000000
-.db 0b00000000, 0b00000000
-.db 0b00000000, 0b00000000
-.db 0b00011000, 0b00111100
-.db 0b00111100, 0b00000000
-char_1:
-.db 0b00111000, 0b01111000
-.db 0b00011000, 0b00011000
-.db 0b00011000, 0b00011000
-.db 0b00011000, 0b00011000
-.db 0b00011000, 0b00111100
-
-
-
-
-_tmr1_int:
-	push	r16							;guardo contexto: registros y banderas
-	in		r16,	SREG
-	push	XH
-	push	XL
-		
-	dec		r24
-	andi	r24,	0b00000111
-	
-	
-	ldi		XL,	low(screen)			;apunto de nuevo Y al primer byte de la pantalla
-	ldi		XH,	high(screen)	
-
-	
-	st		X,		r24					;guardo el byte nuevo o el que estaba antes en la memoria de pantalla
-
-	
-	pop		XL
-	pop		XH
-	pop		r16
-	out		SREG,	r16
-	reti
-
-der:
-	push r16
-	push r17
-
-	call rutina
-
-	inc pos_x 
-	mov r17, pos_x
-	mov r16, pos_y
-
-
-	cpi pos_x, 24
-	brge topper
-
-	;ldi r17, 21
-	;mov pos_x, r17
-	;mov r16, pos_y
-    call copia_char        ; Copia el carácter actual en la nueva posición
-	;call check_collision
-	jmp fine
-	
-	topper:
-	ldi r17, 1
-	mov pos_x, r17
-	mov r16, pos_y
-	call copia_char	
-
-    ; Restaura los registros guardados
-	fine:
-	pop r17
-	pop r16
-    ret                    ; Retorna de la rutina 'mover'
-
-izq:
-	push r16
-	push r17
-	
-;copia una imagen de fondo en el panel
-	call rutina
-
-	dec pos_x 
-	mov r17, pos_x
-	mov r16, pos_y
-
-	cpi pos_x, 3
-	brlo topp
-
-    call copia_char        ; Copia el carácter actual en la nueva posición
-	jmp fin
-	
-	topp:
-	ldi r17, 24
-	mov pos_x, r17
-	mov r16, pos_y
-	call copia_char	
-
-    ; Restaura los registros guardados
-	fin:
-	pop r17
-	pop r16
-    ret                    ; Retorna de la rutina 'mover'
-
-subir:
-	push r16
-	push r17
-	
-	call rutina
-
-	dec pos_y 
-	mov r17, pos_x
-	mov r16, pos_y
-
-    call copia_char        ; Copia el carácter actual en la nueva posición
-	
-	cpi pos_y, 0
-	breq previa
-
-	jmp fino
-	
-	;topp:
-	;ldi r17, 24
-	;mov pos_x, r17
-	;mov r16, pos_y
-	;call copia_char	
-
-    ; Restaura los registros guardados
-	fino:
-	pop r17
-	pop r16
-    ret                    ; Retorna de la rutina 'mover'
-
-
-
-delay:
-	push r18
-	push r19
-	push r20
-    ldi  r18, 10
-    ldi  r19, 10
-    ldi  r20, 110
-L1: dec  r20
-    brne L1
-    dec  r19
-    brne L1
-    dec  r18
-    brne L1
-	pop r20
-	pop r19
-	pop r18
-	ret
-
-rutina:
-	cpi nivel, 1
-	breq nivelOne
-	cpi nivel, 2
-	breq nivelTwo
-	cpi nivel, 3
-	breq nivelThree
-	cpi nivel, 4
-	breq finish
-	cpi nivel, 5
-	breq loser
-	ret
-;------------------------------------------------------------------------------------------
-nivelOne:
-;copia una imagen de fondo en el panel
-	ldi		ZL,	low(Menu<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
-	ldi		ZH,	high(Menu<<1)
-	call	copia_img	
-	ret
-
-nivelTwo:
-;copia una imagen de fondo en el panel
-	ldi		ZL,	low(nivelDos<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
-	ldi		ZH,	high(nivelDos<<1)
-	call	copia_img
-	ret
-
-nivelThree:
-	ldi		ZL,	low(nivelTres<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
-	ldi		ZH,	high(nivelTres<<1)
-	call	copia_img
-	ret
-
-finish:
-	ldi		ZL,	low(caffer<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
-	ldi		ZH,	high(caffer<<1)
-	call	copia_img
-	ret
-
-loser:
-	ldi		ZL,	low(lose<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
-	ldi		ZH,	high(lose<<1)
-	call	copia_img
-	ret
-;------------------------------------------------------------------------------------------
-
-previa:
-	cpi pos_x, 9
-	breq aumento
-	cpi pos_x, 10
-	breq aumento
-	cpi pos_x, 11
-	breq aumento
-	cpi pos_x, 12
-	breq aumento
-	cpi pos_x, 13
-	breq aumento
-	cpi pos_x, 14
-	breq aumento
-	cpi pos_x, 15
-	breq aumento
-	cpi pos_x, 16
-	breq aumento
-
-	rjmp loserprev
-	ret
-
-aumento:
-	inc nivel
-	ldi pos_y, 22
-	ldi pos_x, 12
-
-	mov r17, pos_x
-	mov r16, pos_y
-
-    call copia_char        ; Copia el carácter actual en la nueva posición
-	jmp fino 
-	ret
-
-loserprev:
-	ldi nivel, 5
-	ldi pos_y, 22
-	ldi pos_x, 12
-
-	mov r17, pos_x
-	mov r16, pos_y
-
-    call copia_char        ; Copia el carácter actual en la nueva posición
-	jmp fino 
-	ret
-
-
-check_collision:
-	; Cargar la posición en el fondo de la imagen a partir de pos_x y pos_y
-	ldi		r30,	low(Menu)               ; Apunta a la base de la tabla 'Menu'
-	ldi		r31,	high(Menu)
-	
-	; Calcular el índice para pos_x y pos_y
-	mov		r18,	pos_x					; r18 contiene pos_x
-	mov		r19,	pos_y					; r19 contiene pos_y
-	
-	; Suponiendo que el ancho de la imagen es de 32 bytes
-	; índice = (pos_y * 32) + pos_x
-	ldi		r20, 32                       ; Ancho de la imagen
-	mul		r19, r20                      ; Multiplica pos_y * 32
-	add		r0, r18                       ; Suma pos_x
-	adc		r1, r1							; Acomoda el acarreo
-	add		r30, r0                       ; Desplaza Z (ZL) a la posición
-	adc		r31, r1                       ; Ajusta el acarreo en ZH
-
-	; Leer el valor del color en esa posición
-	lpm		r21, Z                        ; Carga el byte en la posición Z a r21
-
-	; Comparar con el valor 0x07 (blanco)
-	ldi		r22, 0x07
-	cp		r21, r22                      ; Comparar el color con blanco (0x07)
-	breq	colision_detectada            ; Si es igual a 0x07, es una colisión
-
-	; No hubo colisión, continúa la ejecución normal
-	ret
-
-colision_detectada:
-	; Código para manejar la colisión
-	; Aquí puedes colocar la rutina que manejará el evento de colisión
-	ldi		ZL,	low(nivelDos<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
-	ldi		ZH,	high(nivelDos<<1)
-	call	copia_img
-	ret
-
-
 nivelTres:
 	.db 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x07, 0x07, 0x07, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x07, 0x07, 0x07, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06
 	.db 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x07, 0x07, 0x07, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0x07, 0x07, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06
@@ -745,7 +765,6 @@ nivelTres:
 	.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x00, 0x00, 0x00, 0x00
 	.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	
-
 lose:
 	.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	.db 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x02, 0x02, 0x02, 0x00, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x02, 0x02, 0x02, 0x02, 0x02, 0x00, 0x02, 0x02, 0x02, 0x02, 0x00, 0x00
@@ -779,5 +798,9 @@ lose:
 	.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+
+
+
+
 
 

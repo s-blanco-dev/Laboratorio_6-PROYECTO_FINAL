@@ -361,7 +361,7 @@ gestorColision:
 colisionUno:
 	call colisionNivelUno
 	ret
-colisionDos:
+colisionTres:
 	call colisionNivelTres
 	ret
 ;------------------------------------------------------------------------------------------------------------------------
@@ -391,7 +391,7 @@ izq:
 	cpi pos_x, 3
 	brlo topp
     call copia_char
-	call colisionNivelUno
+	call gestorColision
 	jmp fin
 
 subir:
@@ -404,7 +404,7 @@ subir:
     call copia_char
 	cpi pos_y, 0
 	breq previa
-
+	call gestorColision
 	jmp fin
 	
 
@@ -539,6 +539,27 @@ colisionNivelE:
     brsh loser            ; Si pos_y < 11, ir a loser
     ret                   ; Si no hay colisión, regresar
 
+colisionNivelTresE:
+    cpi pos_y, 25         ; Comparar pos_y con 11
+    brsh loser            ; Si pos_y < 11, ir a loser
+    ret    
+colisionNivelTresF:
+    cpi pos_y, 0         ; Comparar pos_y con 11
+    brsh loser            ; Si pos_y < 11, ir a loser
+    ret
+colisionNivelTresR:
+    cpi pos_x, 23         ; Comparar pos_y con 11
+    brSH loser            ; Si pos_y < 11, ir a loser
+    ret
+colisionNivelTresG:
+    cpi pos_x, 10         ; Comparar pos_y con 11
+    brlo loser            ; Si pos_y < 11, ir a loser
+    ret
+colisionNivelTresL:
+    cpi pos_x, 24         ; Comparar pos_y con 11
+    brlo loser            ; Si pos_y < 11, ir a loser
+    ret
+
 colisionNivelUno:
     cpi pos_x, 9          ; Comparar pos_x con 9
     breq colisionNivelUnoY ; Si pos_x == 9, ir a la siguiente comprobación
@@ -565,46 +586,25 @@ colisionNivelUno:
     ret                   ; Si no cumple ninguna condición, regresar
 
 colisionNivelTres:
-	cpi pos_x, 11          ; Comparar pos_x con 9
+	cpi pos_x, 11         
     breq colisionNivelTresE ; Si pos_x == 9, ir a la siguiente comprobación
 	cpi pos_x, 3
 	breq colisionNivelTresF
 	cpi pos_x, 30
 	breq colisionNivelTresF
-	cpi pos_y, 26
+	cpi pos_y, 31
 	breq colisionNivelTresR
+	cpi pos_y, 27
+	breq colisionNivelTresR
+	cpi pos_y, 24
+	breq colisionNivelTresG
 	cpi pos_y, 23
-	breq colisionNivelTresR
+	breq colisionNivelTresG
 	cpi pos_y, 19
-	breq colisionNivelTresG
-	cpi pos_y, 18
-	breq colisionNivelTresG
-	cpi pos_y, 14
 	breq colisionNivelTresL
-	cpi pos_y, 11
+	cpi pos_y, 16
 	breq colisionNivelTresL
 	ret
-
-colisionNivelTresE:
-    cpi pos_y, 25         ; Comparar pos_y con 11
-    brsh loser            ; Si pos_y < 11, ir a loser
-    ret    
-colisionNivelTresF:
-    cpi pos_y, 0         ; Comparar pos_y con 11
-    brsh loser            ; Si pos_y < 11, ir a loser
-    ret
-colisionNivelTresR:
-    cpi pos_x, 23         ; Comparar pos_y con 11
-    brSH loser            ; Si pos_y < 11, ir a loser
-    ret
-colisionNivelTresG:
-    cpi pos_x, 10         ; Comparar pos_y con 11
-    brlo loser            ; Si pos_y < 11, ir a loser
-    ret
-colisionNivelTresL:
-    cpi pos_x, 24         ; Comparar pos_y con 11
-    brlo loser            ; Si pos_y < 11, ir a loser
-    ret
 
 
 ;------------------------------------------------------------------------------------------------------
@@ -798,9 +798,3 @@ lose:
 	.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-
-
-
-
-
-

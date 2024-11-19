@@ -513,8 +513,6 @@ finish:
 	ldi		ZL,	low(caffer<<1)			;apunto Z a la imagen de fondo a copiar y luego efectivamente la copia.
 	ldi		ZH,	high(caffer<<1)
 	call	copia_img
-	sbis PINC, 2
-	jmp start
 	rjmp finish
 
 loser:
@@ -579,15 +577,15 @@ colisionNivelTresF:
     brsh loser            ; Si pos_y < 11, ir a loser
     ret
 colisionNivelTresR:
-    cpi pos_x, 23         ; Comparar pos_y con 11
-    brsh loser            ; Si pos_y < 11, ir a loser
-    ret
-colisionNivelTresG:
-    cpi pos_x, 10         ; Comparar pos_y con 11
+    cpi pos_x, 21         ; Comparar pos_y con 11
     brlo loser            ; Si pos_y < 11, ir a loser
     ret
+colisionNivelTresG:
+    cpi pos_x, 11         ; Comparar pos_y con 11
+    brsh loser            ; Si pos_y < 11, ir a loser
+    ret
 colisionNivelTresL:
-    cpi pos_x, 24         ; Comparar pos_y con 11
+    cpi pos_x, 21         ; Comparar pos_y con 11
     brlo loser            ; Si pos_y < 11, ir a loser
     ret
 
@@ -638,23 +636,23 @@ colisionNivelDos:
 	ret
 
 colisionNivelTres:
-	cpi pos_x, 11         
+	cpi pos_x, 9         
     breq colisionNivelTresE ; Si pos_x == 9, ir a la siguiente comprobación
-	cpi pos_x, 3
+	cpi pos_x, 0
 	breq colisionNivelTresF
-	cpi pos_x, 30
+	cpi pos_x, 32
 	breq colisionNivelTresF
-	cpi pos_y, 31
+	cpi pos_y, 25
 	breq colisionNivelTresR
-	cpi pos_y, 27
-	breq colisionNivelTresR
-	cpi pos_y, 23
-	breq colisionNivelTresG
 	cpi pos_y, 22
-	breq colisionNivelTresG
+	breq colisionNivelTresR
 	cpi pos_y, 18
-	breq colisionNivelTresL
+	breq colisionNivelTresG
 	cpi pos_y, 16
+	breq colisionNivelTresG
+	cpi pos_y, 13
+	breq colisionNivelTresL
+	cpi pos_y, 11
 	breq colisionNivelTresL
 	ret
 
